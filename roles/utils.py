@@ -31,6 +31,7 @@ def add_role(principal, role):
     role
         The role which is assigned.
     """
+    """
     if isinstance(principal, User):
         try:
             PrincipalRoleRelation.objects.get(user=principal, role=role, content_id=None, content_type=None)
@@ -43,8 +44,9 @@ def add_role(principal, role):
         except PrincipalRoleRelation.DoesNotExist:
             PrincipalRoleRelation.objects.create(group=principal, role=role)
             return True
-
     return False
+    """
+    return role.add_principal(principal)
 
 def add_local_role(obj, principal, role):
     """Adds a local role to a principal.
@@ -390,7 +392,7 @@ def has_permission(obj, user, codename, roles=None):
     if roles is None:
         roles = []
 
-    if not user.is_anonymous():
+    if not user.is_anonymous:
         roles.extend(get_roles(user, obj))
     # print roles
 
