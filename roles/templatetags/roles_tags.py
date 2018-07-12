@@ -1,7 +1,7 @@
 # django imports
 from django import template
 
-import permissions.utils
+import roles.utils
 register = template.Library()
 
 class PermissionComparisonNode(template.Node):
@@ -33,7 +33,7 @@ class PermissionComparisonNode(template.Node):
     def render(self, context):
         obj = context.get("obj")
         request = context.get("request")
-        if permissions.utils.has_permission(obj, request.user, self.codename):
+        if roles.utils.has_permission(obj, request.user, self.codename):
             return self.nodelist_true.render(context)
         else:
             return self.nodelist_false
