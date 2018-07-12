@@ -2,12 +2,12 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.auth.models import Group
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import ugettext_lazy as _
 
 # permissions imports
-import permissions.utils
+import roles.utils
 
 
 class Permission(models.Model):
@@ -28,10 +28,7 @@ class Permission(models.Model):
     """
     name = models.CharField(_(u"Name"), max_length=100, unique=True)
     codename = models.CharField(_(u"Codename"), max_length=100, unique=True)
-    content_types = models.ManyToManyField(ContentType, verbose_name=_(u"Content Types"), blank=True, related_name="content_types")
-
-    class Meta:
-        app_label = "permissions"
+    content_types = models.ManyToManyField(ContentType, verbose_name=_(u"Content Types"), blank=True, null=True, related_name="content_types")
 
     def __unicode__(self):
         return "%s (%s)" % (self.name, self.codename)
@@ -53,16 +50,14 @@ class ObjectPermission(models.Model):
     """
     role = models.ForeignKey("Role", verbose_name=_(u"Role"), blank=True, null=True)
     permission = models.ForeignKey(Permission, verbose_name=_(u"Permission"))
-    content_type = models.ForeignKey(ContentType, verbose_name=_(u"Content type"))
-    content_id = models.PositiveIntegerField(verbose_name=_(u"Content id"))
-    content = GenericForeignKey(ct_field="content_type", fk_field="content_id")
 
-    class Meta:
-        app_label = "permissions"
+    content_type = models.ForeignKey(ContentType, verbose_name=_(u"Content type"))
+    # content_id = models.PositiveIntegerField(verbose_name=_(u"Content id"))
+    content_id = models.PositiveIntegerField(verbose_name=_(u"Content id"), blank=True, null=True)
+    # content = generic.GenericForeignKey(ct_field="content_type", fk_field="content_id")
 
     def __unicode__(self):
         return "%s / %s / %s - %s" % (self.permission.name, self.role, self.content_type, self.content_id)
-
 
 class ObjectPermissionInheritanceBlock(models.Model):
     """Blocks the inheritance for specific permission and object.
@@ -76,16 +71,13 @@ class ObjectPermissionInheritanceBlock(models.Model):
         The object for which the inheritance is blocked.
     """
     permission = models.ForeignKey(Permission, verbose_name=_(u"Permission"))
+
     content_type = models.ForeignKey(ContentType, verbose_name=_(u"Content type"))
     content_id = models.PositiveIntegerField(verbose_name=_(u"Content id"))
-    content = GenericForeignKey(ct_field="content_type", fk_field="content_id")
-
-    class Meta:
-        app_label = "permissions"
+    content = generic.GenericForeignKey(ct_field="content_type", fk_field="content_id")
 
     def __unicode__(self):
         return "%s / %s - %s" % (self.permission, self.content_type, self.content_id)
-
 
 class Role(models.Model):
     """A role gets permissions to do something. Principals (users and groups)
@@ -99,7 +91,6 @@ class Role(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
     class Meta:
-        app_label = "permissions"
         ordering = ("name", )
 
     def __unicode__(self):
@@ -108,7 +99,7 @@ class Role(models.Model):
     def add_principal(self, principal, content=None):
         """Addes the given principal (user or group) ot the Role.
         """
-        return permissions.utils.add_role(principal, self)
+        return roles.utils.add_role(principal, self)
 
     def get_groups(self, content=None):
         """Returns all groups which has this role assigned. If content is given
@@ -117,8 +108,8 @@ class Role(models.Model):
         if content:
             ctype = ContentType.objects.get_for_model(content)
             prrs = PrincipalRoleRelation.objects.filter(role=self,
-                content_id__in=(None, content.id),
-                content_type__in=(None, ctype)).exclude(group=None)
+                content_id__in = (None, content.id),
+                content_type__in = (None, ctype)).exclude(group=None)
         else:
             prrs = PrincipalRoleRelation.objects.filter(role=self,
             content_id=None, content_type=None).exclude(group=None)
@@ -132,14 +123,13 @@ class Role(models.Model):
         if content:
             ctype = ContentType.objects.get_for_model(content)
             prrs = PrincipalRoleRelation.objects.filter(role=self,
-                content_id__in=(None, content.id),
-                content_type__in=(None, ctype)).exclude(user=None)
+                content_id__in = (None, content.id),
+                content_type__in = (None, ctype)).exclude(user=None)
         else:
             prrs = PrincipalRoleRelation.objects.filter(role=self,
                 content_id=None, content_type=None).exclude(user=None)
 
         return [prr.user for prr in prrs]
-
 
 class PrincipalRoleRelation(models.Model):
     """A role given to a principal (user or group). If a content object is
@@ -162,21 +152,19 @@ class PrincipalRoleRelation(models.Model):
     user = models.ForeignKey(User, verbose_name=_(u"User"), blank=True, null=True)
     group = models.ForeignKey(Group, verbose_name=_(u"Group"), blank=True, null=True)
     role = models.ForeignKey(Role, verbose_name=_(u"Role"))
+
     content_type = models.ForeignKey(ContentType, verbose_name=_(u"Content type"), blank=True, null=True)
     content_id = models.PositiveIntegerField(verbose_name=_(u"Content id"), blank=True, null=True)
-    content = GenericForeignKey(ct_field="content_type", fk_field="content_id")
-
-    class Meta:
-        app_label = "permissions"
-
+    content = generic.GenericForeignKey(ct_field="content_type", fk_field="content_id")
+    
     def __unicode__(self):
         if self.user:
             principal = self.user.username
         else:
             principal = self.group
-
+        
         return "%s - %s" % (principal, self.role)
-
+        
     def get_principal(self):
         """Returns the principal.
         """

@@ -11,12 +11,12 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 
 # permissions imports
-from permissions.exceptions import Unauthorized
-from permissions.models import ObjectPermission
-from permissions.models import ObjectPermissionInheritanceBlock
-from permissions.models import Permission
-from permissions.models import PrincipalRoleRelation
-from permissions.models import Role
+from roles.exceptions import Unauthorized
+from roles.models import ObjectPermission
+from roles.models import ObjectPermissionInheritanceBlock
+from roles.models import Permission
+from roles.models import PrincipalRoleRelation
+from roles.models import Role
 
 # Roles ######################################################################
 
@@ -203,21 +203,19 @@ def get_roles(user, obj=None):
 
     """
     # Cached roles
-    obj_id = "0"
-    if obj:
-        ctype = ContentType.objects.get_for_model(obj)
-        obj_id = "{}|{}".format(obj.id, ctype.id)
+    obj_id = str(obj.id) if obj else "0"
     try:
         return user.roles[obj_id]
     except (AttributeError, KeyError):
         pass
 
     groups = user.groups.all()
-    groups_ids_str = ", ".join([str(g.id) for g in groups])
-
-    if groups_ids_str:
+    groups_ids = [g.id for g in groups]
+    groups_ids_str = ", ".join([str(id) for id in groups_ids]) # to be used for caching ?
+    if groups_ids:
+        query = Q(user_id=user.id) | Q(group_id__in=groups_ids)
         prrs = PrincipalRoleRelation.objects.filter(
-            Q(user_id=user.id) | Q(group_id__in=groups_ids_str), content_id=None
+            query, content_id=None
         ).values("role_id")
     else:
         prrs = PrincipalRoleRelation.objects.filter(user_id=user.id, content_id=None).values("role_id")
@@ -231,7 +229,7 @@ def get_roles(user, obj=None):
 
         if groups_ids_str:
             prrs = PrincipalRoleRelation.objects.filter(
-                Q(user_id=user.id) | Q(group_id__in=groups_ids_str), content_id=obj.id, content_type_id=ctype.id
+                Q(user_id=user.id) | Q(group_id__in=groups_ids), content_id=obj.id, content_type_id=ctype.id
             ).values("role_id")
         else:
             prrs = PrincipalRoleRelation.objects.filter(
@@ -331,7 +329,8 @@ def grant_permission(obj, role, permission):
     try:
         ObjectPermission.objects.get(role=role, content_type = ct, content_id=obj.id, permission=permission)
     except ObjectPermission.DoesNotExist:
-        ObjectPermission.objects.create(role=role, content=obj, permission=permission)
+        # ObjectPermission.objects.create(role=role, content=obj, permission=permission)
+        ObjectPermission.objects.create(role=role, content_type = ct, content_id=obj.id, permission=permission)
 
     return True
 
@@ -393,13 +392,24 @@ def has_permission(obj, user, codename, roles=None):
 
     if not user.is_anonymous():
         roles.extend(get_roles(user, obj))
+    # print roles
 
     ctype = ContentType.objects.get_for_model(obj)
 
     result = False
     while obj is not None:
+        # 150612 - added first test on content_type only (NULL content_id)
+        p = ObjectPermission.objects.filter(
+            content_type=ctype, content_id__isnull=True, role__in=roles, permission__codename=codename).values("id")
+        # print 'global role', obj, p
+
+        if len(p) > 0:
+            result = True
+            break
+
         p = ObjectPermission.objects.filter(
             content_type=ctype, content_id=obj.id, role__in=roles, permission__codename = codename).values("id")
+        # print 'local role', obj, p
 
         if len(p) > 0:
             result = True

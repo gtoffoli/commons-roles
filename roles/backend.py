@@ -1,14 +1,14 @@
 # permissions imports
-import permissions.utils
+import roles.utils
 
 class ObjectPermissionsBackend(object):
-    """Django backend for object permissions. Needs Django 1.2.
+    """Django backend for object roles. Needs Django 1.2.
 
     Use it together with the default ModelBackend like so::
 
         AUTHENTICATION_BACKENDS = (
             'django.contrib.auth.backends.ModelBackend',
-            'permissions.backend.ObjectPermissionsBackend',
+            'roles.backend.ObjectPermissionsBackend',
         )
 
     Then you can use it like:
@@ -49,4 +49,4 @@ class ObjectPermissionsBackend(object):
         obj
             The object for which the permission should be checked.
         """
-        return permissions.utils.has_permission(obj, user_obj, perm)
+        return roles.utils.has_permission(obj, user_obj, perm)
