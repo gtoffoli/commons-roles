@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+# from __future__ import unicode_literals
 
 from django.db import models, migrations
 from django.conf import settings
@@ -61,7 +61,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='principalrolerelation',
             name='role',
-            field=models.ForeignKey(on_delete=models.CASCADE, verbose_name='Role', to='permissions.Role'),
+            field=models.ForeignKey(on_delete=models.CASCADE, verbose_name='Role', to='roles.Role'),
         ),
         migrations.AddField(
             model_name='principalrolerelation',
@@ -71,16 +71,16 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='objectpermissioninheritanceblock',
             name='permission',
-            field=models.ForeignKey(on_delete=models.CASCADE, verbose_name='Permission', to='permissions.Permission'),
+            field=models.ForeignKey(on_delete=models.CASCADE, verbose_name='Permission', to='roles.Permission'),
         ),
         migrations.AddField(
             model_name='objectpermission',
             name='permission',
-            field=models.ForeignKey(on_delete=models.CASCADE, verbose_name='Permission', to='permissions.Permission'),
+            field=models.ForeignKey(on_delete=models.CASCADE, verbose_name='Permission', to='roles.Permission'),
         ),
         migrations.AddField(
             model_name='objectpermission',
             name='role',
-            field=models.ForeignKey(on_delete=models.CASCADE, verbose_name='Role', blank=True, to='permissions.Role', null=True),
+            field=models.ForeignKey(on_delete=models.CASCADE, verbose_name='Role', blank=True, to='roles.Role', null=True),
         ),
     ]

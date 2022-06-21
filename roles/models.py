@@ -1,5 +1,4 @@
-from django.utils.encoding import python_2_unicode_compatible
-# django imports
+# from django.utils.encoding import python_2_unicode_compatible
 from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.auth.models import Group
@@ -8,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import ugettext_lazy as _
 
 
-@python_2_unicode_compatible
+# @python_2_unicode_compatible
 class Permission(models.Model):
     """A permission which can be granted to users/groups and objects.
 
@@ -34,7 +33,7 @@ class Permission(models.Model):
         return "%s (%s)" % (self.name, self.codename)
 
 
-@python_2_unicode_compatible
+# @python_2_unicode_compatible
 class ObjectPermission(models.Model):
     """Grants permission for a role and an content object (optional).
 
@@ -59,7 +58,7 @@ class ObjectPermission(models.Model):
     def __str__(self):
         return "%s / %s / %s - %s" % (self.permission.name, self.role, self.content_type, self.content_id)
 
-@python_2_unicode_compatible
+# @python_2_unicode_compatible
 class ObjectPermissionInheritanceBlock(models.Model):
     """Blocks the inheritance for specific permission and object.
 
@@ -79,7 +78,7 @@ class ObjectPermissionInheritanceBlock(models.Model):
     def __str__(self):
         return "%s / %s - %s" % (self.permission, self.content_type, self.content_id)
 
-@python_2_unicode_compatible
+# @python_2_unicode_compatible
 class Role(models.Model):
     """A role gets permissions to do something. Principals (users and groups)
     can only get permissions via roles.
@@ -148,7 +147,7 @@ class Role(models.Model):
 
         return [prr.user for prr in prrs]
 
-@python_2_unicode_compatible
+# @python_2_unicode_compatible
 class PrincipalRoleRelation(models.Model):
     """A role given to a principal (user or group). If a content object is
     given this is a local role, i.e. the principal has this role only for this
