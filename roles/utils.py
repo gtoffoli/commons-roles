@@ -67,14 +67,20 @@ def add_local_role(obj, principal, role):
         try:
             PrincipalRoleRelation.objects.get(user=principal, role=role, content_id=obj.id, content_type=ctype)
         except PrincipalRoleRelation.DoesNotExist:
+            """
             PrincipalRoleRelation.objects.create(user=principal, role=role, content=obj)
             return True
+            """
+            return PrincipalRoleRelation.objects.create(user=principal, role=role, content=obj)
     else:
         try:
             PrincipalRoleRelation.objects.get(group=principal, role=role, content_id=obj.id, content_type=ctype)
         except PrincipalRoleRelation.DoesNotExist:
+            """
             PrincipalRoleRelation.objects.create(group=principal, role=role, content=obj)
             return True
+            """
+            return PrincipalRoleRelation.objects.create(group=principal, role=role, content=obj)
 
     return False
 
@@ -280,6 +286,21 @@ def get_local_roles(obj, principal):
     else:
         return [prr.role for prr in PrincipalRoleRelation.objects.filter(
             group=principal, content_id=obj.id, content_type=ctype)]
+
+def get_local_role(obj, principal, role):
+    """Returns local role for passed principal and content object or None.
+    """
+    ctype = ContentType.objects.get_for_model(obj)
+
+    try:
+        if isinstance(principal, User):
+            return PrincipalRoleRelation.objects.get(
+                user=principal, content_id=obj.id, content_type=ctype)
+        else:
+            return PrincipalRoleRelation.objects.get(
+                group=principal, content_id=obj.id, content_type=ctype)
+    except:
+        return None
 
 # Permissions ################################################################
 
